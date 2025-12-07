@@ -21,3 +21,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "CurrencyCalculation"
 include(":app")
+include(":core")
+include(":domain")
+include(":data")
+include(":ui")
