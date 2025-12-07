@@ -26,6 +26,9 @@ dependencies {
     // Core 모듈 의존성
     implementation(project(":core"))
     
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    
     // Testing
     testImplementation(libs.junit)
 }
