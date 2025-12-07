@@ -65,7 +65,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":domain"))
     implementation(project(":data"))
-    implementation(project(":ui"))
+    implementation(project(":feature:currency"))
     
     // Core Android
     implementation(libs.androidx.core.ktx)

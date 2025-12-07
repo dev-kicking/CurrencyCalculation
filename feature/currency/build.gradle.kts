@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.kick.currencycalculation.ui"
+    namespace = "dev.kick.currencycalculation.feature.currency"
     
     compileSdk = 36
     
@@ -51,3 +51,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
+
