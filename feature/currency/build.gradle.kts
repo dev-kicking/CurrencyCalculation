@@ -30,6 +30,9 @@ android {
 }
 
 dependencies {
+    // Core 모듈 의존성
+    implementation(project(":core"))
+    
     // Domain 모듈 의존성
     implementation(project(":domain"))
     
@@ -49,6 +52,7 @@ dependencies {
     
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     
     // Testing

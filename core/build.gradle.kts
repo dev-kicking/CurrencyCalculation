@@ -26,6 +26,9 @@ dependencies {
     // Core KTX
     implementation(libs.androidx.core.ktx)
     
+    // JSR-330 for Qualifier
+    implementation("javax.inject:javax.inject:1")
+    
     // Testing
     testImplementation(libs.junit)
 }
