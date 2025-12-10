@@ -78,7 +78,7 @@ fun CountryScrollSelector(
         if (index >= 0) {
             val targetIndex =
                 listScrollMiddle - listScrollMiddle % items.size - visibleItemsMiddle + index
-            if (targetIndex != listState.firstVisibleItemIndex) {
+            if (targetIndex != listState.firstVisibleItemIndex && !listState.isScrollInProgress) {
                 listState.animateScrollToItem(targetIndex)
             }
         }
