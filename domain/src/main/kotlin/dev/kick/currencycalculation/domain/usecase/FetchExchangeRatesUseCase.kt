@@ -8,7 +8,7 @@ import javax.inject.Inject
 class FetchExchangeRatesUseCase @Inject constructor(
     private val repository: CurrencyRepository
 ) {
-    operator fun invoke(apiKey: String): Flow<Result<ExchangeRates>> {
+    operator fun invoke(apiKey: String): Flow<ExchangeRates> {
         return repository.fetchExchangeRates(apiKey)
     }
 }

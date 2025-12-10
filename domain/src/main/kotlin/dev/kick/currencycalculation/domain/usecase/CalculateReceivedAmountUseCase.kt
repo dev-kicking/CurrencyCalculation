@@ -2,6 +2,8 @@ package dev.kick.currencycalculation.domain.usecase
 
 import dev.kick.currencycalculation.domain.model.Currency
 import dev.kick.currencycalculation.domain.model.ExchangeRates
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class CalculateReceivedAmountUseCase @Inject constructor() {
@@ -21,32 +23,27 @@ class CalculateReceivedAmountUseCase @Inject constructor() {
         sendingAmount: Double,
         exchangeRates: ExchangeRates,
         receivingCurrency: Currency
-    ): Result<Double> {
-        val validationResult = validateAmount(sendingAmount)
-        if (validationResult != null) {
-            return Result.failure(validationResult)
-        }
+    ): Flow<Double> = flow {
+        validateAmount(sendingAmount)
         
         val exchangeRate = exchangeRates.getRate(receivingCurrency)
         val receivedAmount = exchangeRate.calculateAmount(sendingAmount)
         
-        return Result.success(receivedAmount)
+        emit(receivedAmount)
     }
     
-    private fun validateAmount(amount: Double): ValidationError? {
+    private fun validateAmount(amount: Double) {
         if (amount.isNaN() || amount.isInfinite()) {
-            return ValidationError.InvalidAmount
+            throw ValidationError.InvalidAmount
         }
         
         if (amount <= MIN_AMOUNT) {
-            return ValidationError.AmountTooSmall
+            throw ValidationError.AmountTooSmall
         }
         
         if (amount > MAX_AMOUNT) {
-            return ValidationError.AmountTooLarge
+            throw ValidationError.AmountTooLarge
         }
-        
-        return null
     }
     
     fun getErrorMessage(error: ValidationError): String {

@@ -12,13 +12,9 @@ class CurrencyRepositoryImpl @Inject constructor(
     private val apiService: CurrencyApiService
 ) : CurrencyRepository {
 
-    override fun fetchExchangeRates(apiKey: String): Flow<Result<ExchangeRates>> = flow {
-        try {
-            val response = apiService.getExchangeRates(apiKey)
-            val result = CurrencyMapper.toExchangeRates(response)
-            emit(result)
-        } catch (e: Exception) {
-            emit(Result.failure(e))
-        }
+    override fun fetchExchangeRates(apiKey: String): Flow<ExchangeRates> = flow {
+        val response = apiService.getExchangeRates(apiKey)
+        val exchangeRates = CurrencyMapper.toExchangeRates(response)
+        emit(exchangeRates)
     }
 }

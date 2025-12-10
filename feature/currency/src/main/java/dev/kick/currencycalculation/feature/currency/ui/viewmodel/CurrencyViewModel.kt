@@ -58,22 +58,12 @@ class CurrencyViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         
         fetchExchangeRatesUseCase(apiKey)
-            .onEach { result ->
-                result.fold(
-                    onSuccess = { exchangeRates ->
-                        _uiState.value = _uiState.value.copy(
-                            exchangeRates = exchangeRates,
-                            isLoading = false
-                        )
-                        calculateReceivedAmount()
-                    },
-                    onFailure = { error ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = error.message ?: "환율 정보를 가져오는데 실패했습니다."
-                        )
-                    }
+            .onEach { exchangeRates ->
+                _uiState.value = _uiState.value.copy(
+                    exchangeRates = exchangeRates,
+                    isLoading = false
                 )
+                calculateReceivedAmount()
             }
             .catch { error ->
                 _uiState.value = _uiState.value.copy(
@@ -103,20 +93,18 @@ class CurrencyViewModel @Inject constructor(
             return
         }
 
-        val result = calculateReceivedAmountUseCase(
+        calculateReceivedAmountUseCase(
             sendingAmount = sendingAmount,
             exchangeRates = exchangeRates,
             receivingCurrency = currentState.selectedReceivingCurrency
         )
-
-        result.fold(
-            onSuccess = { receivedAmount ->
+            .onEach { receivedAmount ->
                 _uiState.value = currentState.copy(
                     receivedAmount = receivedAmount,
                     errorMessage = null
                 )
-            },
-            onFailure = { error ->
+            }
+            .catch { error ->
                 val errorMessage = if (error is CalculateReceivedAmountUseCase.ValidationError) {
                     calculateReceivedAmountUseCase.getErrorMessage(error)
                 } else {
@@ -127,7 +115,7 @@ class CurrencyViewModel @Inject constructor(
                     errorMessage = errorMessage
                 )
             }
-        )
+            .launchIn(viewModelScope)
     }
 }
 

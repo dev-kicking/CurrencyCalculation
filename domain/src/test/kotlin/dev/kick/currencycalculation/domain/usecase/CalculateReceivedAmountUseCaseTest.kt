@@ -3,8 +3,9 @@ package dev.kick.currencycalculation.domain.usecase
 import dev.kick.currencycalculation.domain.model.Currency
 import dev.kick.currencycalculation.domain.model.ExchangeRate
 import dev.kick.currencycalculation.domain.model.ExchangeRates
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -35,64 +36,58 @@ class CalculateReceivedAmountUseCaseTest {
     // ========== 정상 계산 테스트 ==========
     
     @Test
-    fun `KRW 수취금액 계산 성공`() {
+    fun `KRW 수취금액 계산 성공`() = runTest {
         // Given
         val sendingAmount = 100.0
         val expectedReceivedAmount = 145_000.0
 
         // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
+        val actualAmount = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
 
         // Then
-        assertTrue("계산 결과는 성공해야 합니다", result.isSuccess)
-        val actualAmount = result.getOrNull()
         assertNotNull("수취금액은 null이 아니어야 합니다", actualAmount)
         assertEquals(
             "KRW 수취금액이 올바르게 계산되어야 합니다",
             expectedReceivedAmount,
-            actualAmount!!,
+            actualAmount,
             DELTA
         )
     }
 
     @Test
-    fun `JPY 수취금액 계산 성공`() {
+    fun `JPY 수취금액 계산 성공`() = runTest {
         // Given
         val sendingAmount = 50.0
         val expectedReceivedAmount = 7_835.5
 
         // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.JPY)
+        val actualAmount = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.JPY).first()
 
         // Then
-        assertTrue("계산 결과는 성공해야 합니다", result.isSuccess)
-        val actualAmount = result.getOrNull()
         assertNotNull("수취금액은 null이 아니어야 합니다", actualAmount)
         assertEquals(
             "JPY 수취금액이 올바르게 계산되어야 합니다",
             expectedReceivedAmount,
-            actualAmount!!,
+            actualAmount,
             DELTA
         )
     }
 
     @Test
-    fun `PHP 수취금액 계산 성공`() {
+    fun `PHP 수취금액 계산 성공`() = runTest {
         // Given
         val sendingAmount = 200.0
         val expectedReceivedAmount = 11_856.0
 
         // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.PHP)
+        val actualAmount = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.PHP).first()
 
         // Then
-        assertTrue("계산 결과는 성공해야 합니다", result.isSuccess)
-        val actualAmount = result.getOrNull()
         assertNotNull("수취금액은 null이 아니어야 합니다", actualAmount)
         assertEquals(
             "PHP 수취금액이 올바르게 계산되어야 합니다",
             expectedReceivedAmount,
-            actualAmount!!,
+            actualAmount,
             DELTA
         )
     }
@@ -100,149 +95,97 @@ class CalculateReceivedAmountUseCaseTest {
     // ========== 경계값 테스트 ==========
     
     @Test
-    fun `최소 금액 경계값에서 계산 성공`() {
+    fun `최소 금액 경계값에서 계산 성공`() = runTest {
         // Given
         val sendingAmount = MIN_AMOUNT
         val expectedReceivedAmount = 14.5
 
         // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
+        val actualAmount = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
 
         // Then
-        assertTrue("최소 금액에서도 계산이 성공해야 합니다", result.isSuccess)
-        val actualAmount = result.getOrNull()
         assertNotNull("수취금액은 null이 아니어야 합니다", actualAmount)
         assertEquals(
             "최소 금액의 수취금액이 올바르게 계산되어야 합니다",
             expectedReceivedAmount,
-            actualAmount!!,
+            actualAmount,
             DELTA
         )
     }
 
     @Test
-    fun `최대 금액 경계값에서 계산 성공`() {
+    fun `최대 금액 경계값에서 계산 성공`() = runTest {
         // Given
         val sendingAmount = MAX_AMOUNT
         val expectedReceivedAmount = 14_500_000.0
 
         // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
+        val actualAmount = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
 
         // Then
-        assertTrue("최대 금액에서도 계산이 성공해야 합니다", result.isSuccess)
-        val actualAmount = result.getOrNull()
         assertNotNull("수취금액은 null이 아니어야 합니다", actualAmount)
         assertEquals(
             "최대 금액의 수취금액이 올바르게 계산되어야 합니다",
             expectedReceivedAmount,
-            actualAmount!!,
+            actualAmount,
             DELTA
         )
     }
 
     // ========== 검증 실패 테스트 ==========
     
-    @Test
-    fun `0 이하 금액은 검증 실패`() {
+    @Test(expected = CalculateReceivedAmountUseCase.ValidationError.AmountTooSmall::class)
+    fun `0 이하 금액은 검증 실패`() = runTest {
         // Given
         val sendingAmount = 0.0
 
-        // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
-
-        // Then
-        assertFalse("0 이하 금액은 실패해야 합니다", result.isSuccess)
-        val error = result.exceptionOrNull()
-        assertTrue(
-            "AmountTooSmall 에러가 발생해야 합니다",
-            error is CalculateReceivedAmountUseCase.ValidationError.AmountTooSmall
-        )
+        // When & Then
+        useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
     }
 
-    @Test
-    fun `음수 금액은 검증 실패`() {
+    @Test(expected = CalculateReceivedAmountUseCase.ValidationError.AmountTooSmall::class)
+    fun `음수 금액은 검증 실패`() = runTest {
         // Given
         val sendingAmount = -100.0
 
-        // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
-
-        // Then
-        assertFalse("음수 금액은 실패해야 합니다", result.isSuccess)
-        val error = result.exceptionOrNull()
-        assertTrue(
-            "AmountTooSmall 에러가 발생해야 합니다",
-            error is CalculateReceivedAmountUseCase.ValidationError.AmountTooSmall
-        )
+        // When & Then
+        useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
     }
 
-    @Test
-    fun `최대 금액 초과는 검증 실패`() {
+    @Test(expected = CalculateReceivedAmountUseCase.ValidationError.AmountTooLarge::class)
+    fun `최대 금액 초과는 검증 실패`() = runTest {
         // Given
         val sendingAmount = MAX_AMOUNT + 0.01
 
-        // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
-
-        // Then
-        assertFalse("최대 금액 초과는 실패해야 합니다", result.isSuccess)
-        val error = result.exceptionOrNull()
-        assertTrue(
-            "AmountTooLarge 에러가 발생해야 합니다",
-            error is CalculateReceivedAmountUseCase.ValidationError.AmountTooLarge
-        )
+        // When & Then
+        useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
     }
 
-    @Test
-    fun `NaN 값은 검증 실패`() {
+    @Test(expected = CalculateReceivedAmountUseCase.ValidationError.InvalidAmount::class)
+    fun `NaN 값은 검증 실패`() = runTest {
         // Given
         val sendingAmount = Double.NaN
 
-        // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
-
-        // Then
-        assertFalse("NaN 값은 실패해야 합니다", result.isSuccess)
-        val error = result.exceptionOrNull()
-        assertTrue(
-            "InvalidAmount 에러가 발생해야 합니다",
-            error is CalculateReceivedAmountUseCase.ValidationError.InvalidAmount
-        )
+        // When & Then
+        useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
     }
 
-    @Test
-    fun `무한대 값은 검증 실패`() {
+    @Test(expected = CalculateReceivedAmountUseCase.ValidationError.InvalidAmount::class)
+    fun `무한대 값은 검증 실패`() = runTest {
         // Given
         val sendingAmount = Double.POSITIVE_INFINITY
 
-        // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
-
-        // Then
-        assertFalse("무한대 값은 실패해야 합니다", result.isSuccess)
-        val error = result.exceptionOrNull()
-        assertTrue(
-            "InvalidAmount 에러가 발생해야 합니다",
-            error is CalculateReceivedAmountUseCase.ValidationError.InvalidAmount
-        )
+        // When & Then
+        useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
     }
 
-    @Test
-    fun `음수 무한대 값은 검증 실패`() {
+    @Test(expected = CalculateReceivedAmountUseCase.ValidationError.InvalidAmount::class)
+    fun `음수 무한대 값은 검증 실패`() = runTest {
         // Given
         val sendingAmount = Double.NEGATIVE_INFINITY
 
-        // When
-        val result = useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW)
-
-        // Then
-        assertFalse("음수 무한대 값은 실패해야 합니다", result.isSuccess)
-        val error = result.exceptionOrNull()
-        assertTrue(
-            "InvalidAmount 에러가 발생해야 합니다",
-            error is CalculateReceivedAmountUseCase.ValidationError.InvalidAmount
-        )
+        // When & Then
+        useCase(sendingAmount, TEST_EXCHANGE_RATES, Currency.KRW).first()
     }
 
     // ========== 에러 메시지 테스트 ==========
