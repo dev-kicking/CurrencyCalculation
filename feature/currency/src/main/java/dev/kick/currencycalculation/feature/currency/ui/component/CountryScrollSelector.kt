@@ -38,22 +38,29 @@ fun CountryScrollSelector(
     selectedCurrency: Currency,
     onCurrencySelected: (Currency) -> Unit,
     modifier: Modifier = Modifier,
-    visibleItemsCount: Int = 3,
+    visibleItemsCount: Int = 5,
     itemHeight: Dp = 80.dp,
     dividerColor: Color = Color(0xFF9E9E9E),
 ) {
     val items = Currency.getReceivableCurrencies()
     val visibleItemsMiddle = visibleItemsCount / 2
-    val listScrollCount = Integer.MAX_VALUE
-    val listScrollMiddle = listScrollCount / 2
+
+    // 앞, 뒤로 스크롤 할 수 없는 영역 카운트
+    val emptyItemsCount = visibleItemsMiddle
+    val totalItemCount = items.size + emptyItemsCount * 2
+
+    // 실제 시작 인덱스
+    val actualItemsStartIndex = emptyItemsCount
 
     val selectedIndex = items.indexOf(selectedCurrency).takeIf { it >= 0 } ?: 0
-    val listStartIndex =
-        listScrollMiddle - listScrollMiddle % items.size - visibleItemsMiddle + selectedIndex
+    val initialIndex = actualItemsStartIndex + selectedIndex - visibleItemsMiddle
 
-    fun getItem(index: Int) = items[index % items.size]
-
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = listStartIndex)
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = initialIndex.coerceIn(
+            0,
+            totalItemCount - 1
+        )
+    )
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
     val fadingEdgeGradient = remember {
@@ -66,22 +73,32 @@ fun CountryScrollSelector(
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }
-            .map { index -> getItem(index + visibleItemsMiddle) }
+            .map { index ->
+                val actualIndex = index - actualItemsStartIndex + visibleItemsMiddle
+                if (actualIndex in items.indices) {
+                    items[actualIndex]
+                } else {
+                    null
+                }
+            }
             .distinctUntilChanged()
             .collectLatest { currency ->
-                onCurrencySelected(currency)
+                currency?.let { onCurrencySelected(it) }
             }
     }
 
-    LaunchedEffect(selectedCurrency) {
-        val index = items.indexOf(selectedCurrency)
-        if (index >= 0) {
-            val targetIndex =
-                listScrollMiddle - listScrollMiddle % items.size - visibleItemsMiddle + index
-            if (targetIndex != listState.firstVisibleItemIndex && !listState.isScrollInProgress) {
-                listState.animateScrollToItem(targetIndex)
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .collectLatest { index ->
+                val minIndex = 0
+                val maxIndex = totalItemCount - visibleItemsCount
+
+                if (index < minIndex) {
+                    listState.scrollToItem(minIndex)
+                } else if (index > maxIndex) {
+                    listState.scrollToItem(maxIndex)
+                }
             }
-        }
     }
 
     Box(
@@ -96,8 +113,16 @@ fun CountryScrollSelector(
                 .height(itemHeight * visibleItemsCount)
                 .fadingEdge(fadingEdgeGradient)
         ) {
-            items(listScrollCount) { index ->
-                val item = getItem(index)
+            items(emptyItemsCount) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(itemHeight)
+                )
+            }
+
+            items(items.size) { index ->
+                val item = items[index]
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -111,6 +136,14 @@ fun CountryScrollSelector(
                         textAlign = TextAlign.Center
                     )
                 }
+            }
+
+            items(emptyItemsCount) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(itemHeight)
+                )
             }
         }
 
